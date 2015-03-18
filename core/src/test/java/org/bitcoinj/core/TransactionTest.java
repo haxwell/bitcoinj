@@ -424,7 +424,7 @@ public class TransactionTest {
     // Cannot extend Coin, cannot add a satoshi to MAX_MONEY while creating a transaction output.. nothing.
     // The line we are trying to reach here is covered by unit test in ::exceedsMaxMoney2(). 
     // The line is unreachable code, because of other code. It should be removed.
-
+ 
 //    @Test
 //    public void testVerifyThrowsException_WhenNetworkParamsMAXMONEYIsGreaterThanTransactionValue() {
 //    	Transaction sut = new Transaction(PARAMS);
