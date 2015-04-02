@@ -680,6 +680,42 @@ public class WalletTest extends TestWithWallet {
     }
 
     @Test
+    public void isNotConsistent_WhenTransactionOutputHasValueForSpentByButIsAvailableForSpendingIsTrue() throws Exception {
+        // Due to checks in the core code, this condition should never happen. In fact, this
+        //  test is to test code that returns false when and if this impossible case happens
+        Transaction tx = createFakeTx(params, COIN, myAddress);
+        TransactionOutput output = new TransactionOutput(params, tx, valueOf(0, 5), new ECKey().toAddress(params)) {
+            public boolean isAvailableForSpending() { return true; }
+            public boolean isMineOrWatched(TransactionBag tb) { return true; }
+            public TransactionInput getSpentBy() { return getParentTransaction().getInput(0); }
+        };
+
+        tx.addOutput(output);
+
+        wallet.addWalletTransaction(new WalletTransaction(Pool.UNSPENT, tx));
+
+        assertFalse(wallet.isConsistent());
+    }
+
+    @Test
+    public void isNotConsistent_WhenTransactionOutputHasNoValueForSpentByButIsAvailableForSpendingIsFalse() throws Exception {
+        // Due to checks in the core code, this condition should never happen. In fact, this
+        //  test is to test code that returns false when and if this impossible case happens
+        Transaction tx = createFakeTx(params, COIN, myAddress);
+        TransactionOutput output = new TransactionOutput(params, tx, valueOf(0, 5), new ECKey().toAddress(params)) {
+            public boolean isAvailableForSpending() { return false; }
+            public boolean isMineOrWatched(TransactionBag tb) { return true; }
+            public TransactionInput getSpentBy() { return null; }
+        };
+
+        tx.addOutput(output);
+
+        wallet.addWalletTransaction(new WalletTransaction(Pool.SPENT, tx));
+
+        assertFalse(wallet.isConsistent());
+    }
+
+    @Test
     public void transactions() throws Exception {
         // This test covers a bug in which Transaction.getValueSentFromMe was calculating incorrectly.
         Transaction tx = createFakeTx(params, COIN, myAddress);

@@ -1455,14 +1455,14 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             }
 
             for (Transaction tx : unspent.values()) {
-                if (!tx.isConsistent(this, false)) {
+                if (!isTransactionUnspent(tx)) {
                     success = false;
                     log.error("Inconsistent unspent tx {}", tx.getHashAsString());
                 }
             }
 
             for (Transaction tx : spent.values()) {
-                if (!tx.isConsistent(this, true)) {
+                if (!isTransactionSpent(tx)) {
                     success = false;
                     log.error("Inconsistent spent tx {}", tx.getHashAsString());
                 }
@@ -4876,5 +4876,37 @@ public class Wallet extends BaseTaggableObject implements Serializable, BlockCha
             lock.unlock();
         }
     }
+
+    private boolean isTransactionUnspent(Transaction tx) {
+        return isTransactionConsistent(tx, false);
+    }
+
+    private boolean isTransactionSpent(Transaction tx) {
+        return isTransactionConsistent(tx, true);
+    }
+
+    /*
+     * If isSpent - check that all transaction outputs spent, otherwise check that there at least
+     * one unspent.
+     */
+    private boolean isTransactionConsistent(Transaction tx, boolean isSpent) {
+        boolean isActuallySpent = true;
+        for (TransactionOutput o : tx.getOutputs()) {
+            if (o.isAvailableForSpending()) {
+                if (o.isMineOrWatched(this)) isActuallySpent = false;
+                if (o.getSpentBy() != null) {
+                    log.error("isAvailableForSpending != spentBy");
+                    return false;
+                }
+            } else {
+                if (o.getSpentBy() == null) {
+                    log.error("isAvailableForSpending != spentBy");
+                    return false;
+                }
+            }
+        }
+        return isActuallySpent == isSpent;
+    }
+
     //endregion
 }
